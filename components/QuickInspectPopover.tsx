@@ -13,6 +13,7 @@ const QuickInspectPopover: React.FC<QuickInspectPopoverProps> = ({ data, onClose
   const [localValues, setLocalValues] = useState<Record<string, any>>({});
   const popoverRef = React.useRef<HTMLDivElement>(null);
 
+  // Initialize local state for form fields when new inspection data is provided.
   useEffect(() => {
     if (data?.node.config) {
       const initialValues: Record<string, any> = {};

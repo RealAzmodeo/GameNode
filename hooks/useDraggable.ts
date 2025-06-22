@@ -114,6 +114,7 @@ export function useDraggableNode(options: DraggableOptions) {
     };
   }, [dragState.isDragging, handleMouseMove, handleMouseUp]);
 
+  // Update local position if the initialPosition prop changes externally.
   React.useEffect(() => {
     setPosition(initialPosition);
   }, [initialPosition]);

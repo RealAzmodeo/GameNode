@@ -18,6 +18,7 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({ selectedNode, connectio
   const [dataTableColumnsInput, setDataTableColumnsInput] = useState<string>('');
 
 
+  // Update local state when the selected node prop changes
   useEffect(() => {
     const newConfig = selectedNode.config || {};
     setLocalConfig(newConfig);

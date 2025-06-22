@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useLayoutEffect, useRef } from 'react'; // Changed useEffect to useLayoutEffect
 import { ExecutionMetaState } from '../types';
 
 interface LogViewProps {
@@ -8,7 +8,8 @@ interface LogViewProps {
 const LogView: React.FC<LogViewProps> = ({ logs }) => {
   const logContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  // Auto-scroll to the bottom when new logs are added
+  useLayoutEffect(() => {
     if (logContainerRef.current) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
     }

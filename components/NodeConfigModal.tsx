@@ -15,6 +15,8 @@ interface NodeConfigModalProps {
 const NodeConfigModal: React.FC<NodeConfigModalProps> = ({ node, isOpen, onClose, onSave }) => {
   const [currentConfig, setCurrentConfig] = useState<Partial<NodeConfig>>({});
 
+  // Initialize or reset local configuration state when the target node prop changes
+  // or when the modal is opened for a new node.
   useEffect(() => {
     if (node) {
       const initialConf: Partial<NodeConfig> = { ...node.config };
