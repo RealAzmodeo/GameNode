@@ -354,6 +354,8 @@ const NodeComponent: React.FC<NodeComponentProps> = ({
   };
 
   const [showPulseEffect, setShowPulseEffect] = useState(false);
+
+  // Handles the visual pulse effect when the node is actively processing or data flows through it.
   useEffect(() => {
     if (pulsingNodeInfo && pulsingNodeInfo.nodeId === node.id) {
       setShowPulseEffect(true);

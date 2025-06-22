@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react'; // Import useLayoutEffect
 import { InputPort, OutputPort, LogicalCategoryEnum, NodeId, PortTypeEnum, NodeConfig, Connection } from '../types';
 import { 
     NODE_PORT_HEIGHT, 
@@ -67,6 +66,8 @@ const PortComponent: React.FC<PortComponentProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const [showRemoveIcon, setShowRemoveIcon] = useState(false);
 
+  // Sync local editText state (used for the input field) with the literalOverrideValue prop.
+  // This ensures the input field shows the correct current override value when editing begins.
   useEffect(() => {
     if (literalOverrideValue !== undefined) {
       if (typeof literalOverrideValue === 'object') {
@@ -79,7 +80,8 @@ const PortComponent: React.FC<PortComponentProps> = ({
     }
   }, [literalOverrideValue]);
 
-  useEffect(() => {
+  // Focus and select text in the input field when literal editing mode is activated.
+  useLayoutEffect(() => {
     if (isEditingOverride && inputRef.current) {
       inputRef.current.focus();
       inputRef.current.select();
@@ -312,4 +314,3 @@ const PortComponent: React.FC<PortComponentProps> = ({
 };
 
 export default PortComponent;
-

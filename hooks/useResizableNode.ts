@@ -30,6 +30,7 @@ export function useResizableNode(options: ResizableNodeOptions) {
 
   const resizeHandleRef = useRef<SVGRectElement | null>(null);
 
+  // Update local dimensions if the initialDimensions prop changes externally.
   useEffect(() => {
     setCurrentDimensions(initialDimensions);
   }, [initialDimensions]);
