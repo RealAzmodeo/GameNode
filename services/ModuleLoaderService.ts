@@ -1,7 +1,19 @@
 
-import fs from 'fs';
-import path from 'path';
-import { pathToFileURL } from 'url'; // Import pathToFileURL
+// Conditionally import Node.js modules only if in a Node.js environment
+let fs: typeof import('fs') | null = null;
+let path: typeof import('path') | null = null;
+let pathToFileURL: ((path: string) => URL) | null = null;
+
+const nodeModulesLoaded = typeof window === 'undefined' ? Promise.all([
+  import('fs').then(fsModule => fs = fsModule.default),
+  import('path').then(pathModule => path = pathModule.default),
+  import('url').then(urlModule => pathToFileURL = urlModule.pathToFileURL),
+]).then(() => true).catch(err => {
+  console.error("ModuleLoaderService: Error loading Node.js core modules (fs, path, url). External module loading will be disabled.", err);
+  return false;
+}) : Promise.resolve(false);
+
+
 import { allModules } from '../modules';
 import { nodeRegistryService } from './NodeRegistryService';
 import { componentRegistryService } from './ComponentRegistryService';
@@ -32,6 +44,12 @@ class ModuleLoaderService {
   }
 
   private async loadExternalModules(externalPackagesDir: string): Promise<void> {
+    // SERVER-ONLY START
+    if (typeof window !== 'undefined' || !fs || !path || !pathToFileURL) {
+      console.warn("ModuleLoaderService: External module loading is disabled in the browser environment or Node.js modules not loaded.");
+      return Promise.resolve();
+    }
+
     console.log(`ModuleLoaderService: Scanning for external modules in "${externalPackagesDir}"...`);
     try {
       if (!fs.existsSync(externalPackagesDir)) {
@@ -51,8 +69,8 @@ class ModuleLoaderService {
       console.log(`ModuleLoaderService: Found ${packageNames.length} potential external package(s).`);
 
       for (const packageName of packageNames) {
-        const packagePath = path.resolve(externalPackagesDir, packageName); // Use resolve for absolute path
-        const moduleFilePath = path.join(packagePath, 'module.ts'); // path.join for cross-platform compatibility
+        const packagePath = path.resolve(externalPackagesDir, packageName);
+        const moduleFilePath = path.join(packagePath, 'module.ts');
 
         console.log(`ModuleLoaderService: Attempting to load external package "${packageName}" from "${moduleFilePath}"...`);
 
@@ -62,13 +80,9 @@ class ModuleLoaderService {
             continue;
           }
 
-          // Dynamically import the module.
-          // Vite handles .ts imports out of the box in dev. For production, ensure build processes are correct.
-          // Using pathToFileURL for robust ESM dynamic imports in Node.js environments.
           const moduleFileUrl = pathToFileURL(moduleFilePath).href;
           const externalModuleImport = await import(/* @vite-ignore */ moduleFileUrl);
           const externalModule = externalModuleImport.default;
-          // The /* @vite-ignore */ comment is to prevent Vite from trying to bundle this dynamic import path at build time in a way that breaks.
 
           if (!externalModule || typeof externalModule !== 'object') {
             console.error(`ModuleLoaderService: Error loading package "${packageName}". Module "module.ts" does not have a default export or the default export is not an object. Skipping.`);
@@ -104,6 +118,7 @@ class ModuleLoaderService {
       console.error(`ModuleLoaderService: Error while scanning or loading external modules from "${externalPackagesDir}". Error:`, error);
     }
     console.log("ModuleLoaderService: External modules processing complete.");
+    // SERVER-ONLY END
   }
 
   public async loadModules(): Promise<void> {
@@ -115,7 +130,25 @@ class ModuleLoaderService {
     console.log("ModuleLoaderService: Starting all module loading...");
 
     this.loadInternalModules();
-    await this.loadExternalModules(EXTERNAL_PACKAGES_DIR);
+
+    // Ensure Node.js specific modules are loaded if we are in a Node.js environment
+    // before attempting to load external modules.
+    const canLoadExternal = await nodeModulesLoaded;
+    if (canLoadExternal) {
+      await this.loadExternalModules(EXTERNAL_PACKAGES_DIR);
+    } else if (typeof window === 'undefined') {
+      // This means we are in Node.js but fs/path/url failed to load, which is very unlikely for core modules.
+      // Warning already logged by nodeModulesLoaded promise.
+      console.error("ModuleLoaderService: Core Node.js modules (fs, path, url) failed to load. External module loading skipped.");
+    } else {
+      // In browser, nodeModulesLoaded is false, external loading is skipped.
+      // Warning is handled inside loadExternalModules or by canLoadExternal check.
+      console.log("ModuleLoaderService: Browser environment detected or Node modules not available. Skipping external module loading.");
+      // Explicitly call to ensure the warning from loadExternalModules is printed if it wasn't before.
+      if (!this.hasLoaded) { // Avoid double logging if loadExternalModules was already called and returned early
+         await this.loadExternalModules(EXTERNAL_PACKAGES_DIR); // This will just print the warning and return
+      }
+    }
 
     this.hasLoaded = true;
     console.log("ModuleLoaderService: All modules processed.");
