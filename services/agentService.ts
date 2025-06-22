@@ -11,26 +11,27 @@ if (typeof window === 'undefined') {
   geminiApiKey = process.env.GEMINI_API_KEY; // Direct access from Node's process.env
 
   if (!geminiApiKey) {
-    console.error("GEMINI_API_KEY is not set in server-side environment variables.");
+    console.warn("AgentService (Server-side): GEMINI_API_KEY is not set in environment variables. AI agent calls will be disabled.");
     // No AI instance if key is missing
   } else {
     try {
       ai = new GoogleGenAI({ apiKey: geminiApiKey });
+      console.info("AgentService (Server-side): GoogleGenAI initialized successfully.");
     } catch (error) {
-      console.error("Failed to initialize GoogleGenAI, likely due to API key issue:", error);
+      console.error("AgentService (Server-side): Failed to initialize GoogleGenAI. AI agent calls will be disabled.", error);
       ai = null; // Ensure ai is null if initialization fails
     }
   }
 } else {
   // In browser environment
   // Check the flag set by Vite. `process.env.GEMINI_API_KEY_AVAILABLE` is a string "true" or "false".
-  const apiKeyAvailable = process.env.GEMINI_API_KEY_AVAILABLE === 'true';
-  if (apiKeyAvailable) {
+  const apiKeyWasAvailableAtBuildTime = process.env.GEMINI_API_KEY_AVAILABLE === 'true';
+  if (apiKeyWasAvailableAtBuildTime) {
     // This case implies the key *was* available at build time, which we are trying to avoid for client.
     // If this log appears, vite.config.js might still be exposing too much.
-    console.warn("Agent Service: GEMINI_API_KEY was unexpectedly made available to client-side. This is a security risk and should be fixed in vite.config.js. Direct API calls from client are disabled.");
+    console.warn("AgentService (Client-side): GEMINI_API_KEY was unexpectedly made available to client-side during build. This is a security risk. Direct API calls from client are disabled.");
   } else {
-    console.info("Agent Service: Running in browser environment. API key not available. AI agent calls will be disabled.");
+    console.info("AgentService (Client-side): Running in browser. API key not available (as expected). AI agent calls will be disabled.");
   }
   // `ai` remains null, `geminiApiKey` remains undefined.
 }
@@ -142,16 +143,15 @@ export async function processUserCommandViaAgent(
   availableOperations: OperationTypeEnum[]
 ): Promise<AgentPlan | null> {
   if (typeof window !== 'undefined') {
-    console.warn("AgentService: processUserCommandViaAgent cannot be called from the browser. This function is server-side only.");
-    // Optionally, could throw an error or return a specific structure indicating client-side call
-    // For now, returning null to match existing behavior on API key failure.
-    return Promise.resolve(null);
+    // This function should ideally not be called from client-side code.
+    // The hook useAgentState should prevent this.
+    console.warn("AgentService: processUserCommandViaAgent was called from the browser. This is unexpected. AI agent calls are disabled on the client.");
+    throw new Error("AGENT_CLIENT_SIDE_CALL_FORBIDDEN");
   }
 
   if (!ai || !geminiApiKey) {
-    console.error("AgentService: Gemini AI SDK not initialized or API key is missing. Agent cannot process commands.");
-    // Throw an error because this is a server-side context where it's expected to work if configured.
-    throw new Error("API Key not configured or AI SDK initialization failed for Agent.");
+    console.error("AgentService (Server-side): Attempted to process command, but AI SDK is not initialized or API key is missing.");
+    throw new Error("AGENT_NOT_INITIALIZED: Gemini AI SDK not initialized or API key is missing. Configure GEMINI_API_KEY environment variable for the server.");
   }
 
   const prompt = buildPrompt(userCommand, availableOperations);

@@ -64,10 +64,11 @@ export function createAtomicNode(options: CreateNodeOptions): AtomicNode {
   const definition = nodeRegistryService.getNodeDefinition(options.operationType);
 
   if (!definition) {
-    console.error(`Node definition not found for operation type: ${options.operationType}`);
+    // console.error(`Node definition not found for operation type: ${options.operationType}`);
     // Fallback, but this indicates an issue with module loading or registration
-    const baseFallback = createBaseNode(options, `Unknown: ${options.operationType}`, "Unknown node type", {});
-    return { ...baseFallback, type: 'Atomic', inputPorts: [], outputPorts: [] };
+    // const baseFallback = createBaseNode(options, `Unknown: ${options.operationType}`, "Unknown node type", {});
+    // return { ...baseFallback, type: 'Atomic', inputPorts: [], outputPorts: [] };
+    throw new Error(`Node definition not found for operation type: ${options.operationType}. Ensure modules are loaded and type is registered.`);
   }
 
   const { name: regName, description: regDesc, defaultConfig: regConfig, portGenerator } = definition;

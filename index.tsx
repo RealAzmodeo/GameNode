@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from './App'; // App.tsx provides a named export
+import './index.css'; // Import Tailwind CSS
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

@@ -21,18 +21,41 @@ export const useAgentState = (callbacks: AgentStateCallbacks) => {
     setCurrentAgentPlan(null); // Clear previous plan
     appendLog(`Agent processing command: "${command}"`, 'info');
 
+    // Client-side check for API key availability (via Vite's define)
+    // process.env.GEMINI_API_KEY_AVAILABLE is a string "true" or "false"
+    const apiKeyAvailableForClient = process.env.GEMINI_API_KEY_AVAILABLE === 'true';
+
+    if (typeof window !== 'undefined' && !apiKeyAvailableForClient) {
+        // This is a more direct check for the browser environment if the key wasn't even available at build time.
+        // The AGENT_CLIENT_SIDE_CALL_FORBIDDEN error from agentService would also catch this if an attempt was made.
+        appendLog("Agent functionality is disabled: API key not configured for client-side use (this is the intended secure behavior for browsers).", 'error');
+        setIsAgentProcessing(false);
+        return;
+    }
+    // If apiKeyAvailableForClient is true, it's a misconfiguration, agentService will prevent actual calls and log a warning.
+    // The user might see a generic error below if agentService throws AGENT_CLIENT_SIDE_CALL_FORBIDDEN.
+
     try {
       const availableOps = getAvailableNodeOperations();
+      // This call will only proceed if on server-side with a key, or throw.
       const plan = await processUserCommandViaAgent(command, availableOps);
       if (plan) {
         setCurrentAgentPlan(plan);
         appendLog(`Agent proposed plan:\n${plan.planSummary}`, 'agent_plan');
       } else {
-        appendLog("Agent could not generate a plan.", 'error');
+        // This case should ideally not be reached if agentService throws errors for no-plan scenarios.
+        appendLog("Agent did not return a plan or encountered an unexpected issue.", 'error');
       }
     } catch (error: any) {
       console.error("Agent processing error in useAgentState:", error);
-      appendLog(`Agent error: ${error.message}`, 'error');
+      if (error.message.startsWith("AGENT_NOT_INITIALIZED")) {
+        appendLog("Agent Error: The AI agent is not initialized on the server. Please ensure the GEMINI_API_KEY is correctly set in the server environment.", 'error');
+      } else if (error.message === "AGENT_CLIENT_SIDE_CALL_FORBIDDEN") {
+        // This error comes from agentService if processUserCommandViaAgent is somehow called client-side.
+        appendLog("Agent Error: Direct AI calls from the browser are not permitted. This is a safeguard.", 'error');
+      } else {
+        appendLog(`Agent error: ${error.message}`, 'error');
+      }
     } finally {
       setIsAgentProcessing(false);
     }
