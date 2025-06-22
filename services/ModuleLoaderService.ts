@@ -4,14 +4,45 @@ let fs: typeof import('fs') | null = null;
 let path: typeof import('path') | null = null;
 let pathToFileURL: ((path: string) => URL) | null = null;
 
-const nodeModulesLoaded = typeof window === 'undefined' ? Promise.all([
-  import('fs').then(fsModule => fs = fsModule.default),
-  import('path').then(pathModule => path = pathModule.default),
-  import('url').then(urlModule => pathToFileURL = urlModule.pathToFileURL),
-]).then(() => true).catch(err => {
-  console.error("ModuleLoaderService: Error loading Node.js core modules (fs, path, url). External module loading will be disabled.", err);
-  return false;
-}) : Promise.resolve(false);
+const nodeModulesLoaded = typeof window === 'undefined'
+  ? Promise.all([
+      import('fs').then(fsModule => {
+        fs = fsModule.default;
+        console.log("ModuleLoaderService: Node.js 'fs' module loaded successfully.");
+      }).catch(err => {
+        console.error("ModuleLoaderService: Failed to load Node.js 'fs' module.", err);
+        throw err; // Re-throw to be caught by Promise.all().catch()
+      }),
+      import('path').then(pathModule => {
+        path = pathModule.default;
+        console.log("ModuleLoaderService: Node.js 'path' module loaded successfully.");
+      }).catch(err => {
+        console.error("ModuleLoaderService: Failed to load Node.js 'path' module.", err);
+        throw err; // Re-throw
+      }),
+      import('url').then(urlModule => {
+        if (typeof urlModule.pathToFileURL === 'function') {
+          pathToFileURL = urlModule.pathToFileURL;
+          console.log("ModuleLoaderService: Node.js 'url.pathToFileURL' loaded successfully.");
+        } else {
+          // Handle cases where pathToFileURL might not be directly on the default export,
+          // or if the structure is different than expected (though unlikely for 'url').
+          console.error("ModuleLoaderService: 'pathToFileURL' not found on 'url' module export.");
+          throw new Error("'pathToFileURL' not found on 'url' module export.");
+        }
+      }).catch(err => {
+        console.error("ModuleLoaderService: Failed to load Node.js 'url' module or 'pathToFileURL'.", err);
+        throw err; // Re-throw
+      }),
+    ]).then(() => {
+      console.log("ModuleLoaderService: All Node.js core modules for external loading initialized successfully.");
+      return true;
+    }).catch(err => {
+      // This catch will now handle errors from any of the individual imports
+      console.error("ModuleLoaderService: Critical error loading one or more Node.js core modules (fs, path, url). External module loading will be disabled.", err.message);
+      return false;
+    })
+  : Promise.resolve(false);
 
 
 import { allModules } from '../modules';
