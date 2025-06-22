@@ -25,7 +25,7 @@ export interface Port {
   description?: string;
   connectedOutputNodeId?: NodeId;
   connectedOutputPortId?: string;
-  operationType?: OperationTypeEnum;
+  operationType?: string; // Changed to string
 }
 
 export interface InputPort extends Port {}
@@ -123,7 +123,7 @@ export interface NodeForm {
   id: NodeId;
   name: string;
   type: 'Atomic' | 'Molecular';
-  operationType: OperationTypeEnum;
+  operationType: string; // Changed to string
   description?: string;
   inputPorts: InputPort[];
   outputPorts: OutputPort[];
@@ -307,19 +307,19 @@ export interface LoadedNodeLogicModule {
 
 // Represents the full definition stored in NodeRegistryService
 export interface RegisteredAtomicNodeDefinition extends LoadedNodeLogicModule {
-  operationType: OperationTypeEnum; // From manifest
+  operationType: string; // From manifest - Changed to string
   name: string;                     // From manifest
   description: string;              // From manifest
-  category: string;                 // From manifest
+  category: string;                 // From manifest - Remains string, was already effectively string
   isArchetype?: boolean;            // From manifest
 }
 
 // Structure of a node entry in manifest.json (simulated)
 export interface ManifestNodeEntry {
-  type: OperationTypeEnum; // Renamed from operationType for clarity in manifest context
+  type: string; // Renamed from operationType for clarity in manifest context - Changed to string
   name: string;
   description: string;
-  category: string;
+  category: string; // Remains string
   isArchetype?: boolean;
   // definitionPath: string; // Path to the file exporting LoadedNodeLogicModule parts
   // For simulation, we'll embed the LoadedNodeLogicModule parts directly in the existing AtomicNodeDefinition
@@ -328,10 +328,10 @@ export interface ManifestNodeEntry {
 // Simulating the old AtomicNodeDefinition but now it includes the execute functions
 // This is what will be in modules/*.ts for now
 export interface AtomicNodeDefinition extends LoadedNodeLogicModule {
-  operationType: OperationTypeEnum; // This is the "type" from ManifestNodeEntry
+  operationType: string; // This is the "type" from ManifestNodeEntry - Changed to string
   name: string; // From ManifestNodeEntry
   description: string; // From ManifestNodeEntry
-  category: string; // From ManifestNodeEntry
+  category: string; // From ManifestNodeEntry - Remains string
   isArchetype?: boolean; // From ManifestNodeEntry
 }
 
@@ -372,7 +372,7 @@ export interface LogicalModule {
 // Agent Related Types
 export interface AgentPlannedNode {
   tempId: string;
-  operationType: OperationTypeEnum;
+  operationType: string; // Changed to string
   name: string;
   config?: Partial<NodeConfig>;
   position: { x: number; y: number };
@@ -395,7 +395,7 @@ export interface AgentPlan {
 export interface QuickShelfItem {
   id: string;
   type: 'atomic' | 'blueprint';
-  operationType?: OperationTypeEnum;
+  operationType?: string; // Changed to string
   blueprintName?: string;
   icon: React.FC<React.SVGProps<SVGSVGElement>>;
   label: string;
@@ -407,7 +407,7 @@ export interface AutocompleteItem {
   type: 'atomic' | 'blueprint';
   name: string;
   icon: React.FC<React.SVGProps<SVGSVGElement>>;
-  operationType?: OperationTypeEnum;
+  operationType?: string; // Changed to string
   blueprintCreatorFunction?: () => MolecularNode;
 }
 
