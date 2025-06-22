@@ -55,7 +55,23 @@ interface NodeComponentProps extends Pick<UseQuickInspectReturn,
 
 const basicMarkdownToHtml = (markdown: string): string => {
   if (!markdown) return '';
-  return markdown
+
+  // WARNING: This is a very basic sanitizer.
+  // For robust XSS protection, a library like DOMPurify is recommended.
+  const escapeHtml = (unsafe: string): string => {
+    return unsafe
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  };
+
+  // First, escape HTML to prevent XSS from arbitrary HTML in markdown input.
+  let escapedMarkdown = escapeHtml(markdown);
+
+  // Then, apply markdown transformations.
+  return escapedMarkdown
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
     .replace(/\*(.*?)\*/g, '<em>$1</em>')         // Italic
     .replace(/\n/g, '<br />');                     // Newlines

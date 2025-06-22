@@ -1,11 +1,11 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { OperationTypeEnum, NodeId, MolecularNode, ComponentBlueprint, QuickShelfItem, OutputPort, AnyNode, Connection, RegisteredAtomicNodeDefinition } from '../types';
-import { nodeRegistryService } from '../services/NodeRegistryService'; 
-import { componentRegistryService } from '../services/ComponentRegistryService'; 
+import { OperationTypeEnum, NodeId, MolecularNode, ComponentBlueprint, QuickShelfItem, OutputPort, AnyNode, Connection, RegisteredAtomicNodeDefinition } from '@/types';
+import { nodeRegistryService } from '@/services/NodeRegistryService';
+import { componentRegistryService } from '@/services/ComponentRegistryService';
 import * as Icons from './Icons';
 import { XMarkIcon } from './Icons';
-import { canConnect } from '../services/validationService';
+import { canConnect } from '@/services/validationService';
 
 interface NodeButtonProps {
   label: string;

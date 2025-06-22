@@ -1,0 +1,434 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Styles moved from index.html <style> tag */
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #24272E; /* Axiom 1: Canvas color */
+  color: rgba(255, 255, 255, 0.87); /* Axiom 1: Typo default */
+  position: relative; /* For pseudo-elements */
+  overflow: hidden; /* Prevent scrollbars from pseudo-elements if they overflow slightly */
+}
+
+/* Ambient Lighting */
+body::before { /* Top ambient light */
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150%; /* Wider for more diffuse effect */
+  height: 60%;
+  background: radial-gradient(ellipse at center top, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0; /* Behind noise, above body bg color */
+}
+body::after { /* Bottom accent ambient light (optional, subtle) */
+  content: "";
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150%;
+  height: 50%;
+  background: radial-gradient(ellipse at center bottom, rgba(126, 34, 206, 0.015) 0%, transparent 70%); /* Subtle purple accent */
+  pointer-events: none;
+  z-index: 0; /* Behind noise, above body bg color */
+}
+
+/* Axiom 1: Canvas Texture - Fine Noise */
+.noise-texture-canvas::before { /* This remains, but z-index adjusted if body's children are stacked */
+  content: "";
+  position: absolute; /* Should be fixed if body is the direct canvas */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.025'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1; /* Above ambient lights, below content */
+}
+ .canvas-bg-color { background-color: #24272E; } /* Base canvas color */
+ #root {
+   position: relative; /* Ensure #root content is above pseudo-elements */
+   z-index: 2;
+ }
+
+/* Custom scrollbar for new theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #2D3039; /* Panel background color */
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #4A5568; /* A mid-grey */
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #718096; /* Lighter grey on hover */
+}
+
+.connecting-line {
+  stroke-width: 2;
+  pointer-events: none;
+}
+.connection-line { /* Default for data connections */
+  stroke-width: 2;
+  stroke: #9E9E9E; /* Axiom 2: ANY port color for neutral data line */
+}
+.port-hoverable:hover {
+    filter: brightness(1.3) saturate(1.2); /* Axiom 3: Hover on ports - halo effect */
+}
+
+/* Revised Crystal Component Style for Panels (Cards) */
+.neumorphic-panel {
+  background-color: #2D3039; /* Base panel material color */
+  /* Axiom 2: Colored Drop Shadow */
+  box-shadow: 0px 8px 24px rgba(68, 138, 255, 0.1); /* Subtle blue tinted shadow */
+  /* Axiom 2: Edge Lit by Ambient Light */
+  border-top: 1px solid rgba(255, 255, 255, 0.12); /* Brighter top edge */
+  border-left: 1px solid rgba(255, 255, 255, 0.10);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03); /* Dimmer bottom edge */
+  border-right: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 0.75rem; /* Consistent rounded corners */
+}
+
+/* Revised Tactile Controls (Buttons) */
+.neumorphic-button {
+  background-color: #2D3039;
+  /* Default Convex: Highlight top, shadow bottom for light from above */
+  box-shadow: 0 -1px 2px rgba(57, 60, 73, 0.5), /* Lighter highlight from top #393c49 */
+              0 2px 3px rgba(33, 36, 41, 0.6);  /* Darker shadow at bottom #212429 */
+  color: rgba(255, 255, 255, 0.8);
+  transition: all 0.15s ease-out;
+  border: 1px solid rgba(255, 255, 255, 0.05); /* Subtle border to define edge */
+}
+.neumorphic-button:hover:not(:disabled) {
+  background-color: #333742; /* Slightly lighter to "illuminate" */
+  /* More prominent convex shadow */
+  box-shadow: 0 -2px 4px rgba(57, 60, 73, 0.7),
+              0 3px 5px rgba(33, 36, 41, 0.8);
+  color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+ .neumorphic-button:active:not(:disabled) {
+   /* Pressed Concave: Inner shadow top, inner highlight bottom */
+   background-color: #2A2D34; /* Slightly darker when pressed */
+   box-shadow: inset 0 2px 3px rgba(33, 36, 41, 0.7), /* Darker inner shadow top */
+               inset 0 -1px 2px rgba(57, 60, 73, 0.5); /* Lighter inner highlight bottom */
+   color: rgba(255, 255, 255, 0.85);
+   transform: translateY(1px); /* Subtle press down effect */
+}
+.neumorphic-button.active-tab-style { /* For active tabs, still convex but distinct */
+  background-color: #353942; /* Slightly different base for active tab */
+  box-shadow: 0 -1px 2px rgba(57, 60, 73, 0.6),
+              0 2px 3px rgba(33, 36, 41, 0.7),
+              inset 0 0 5px rgba(68, 138, 255, 0.1); /* Subtle inner glow for active */
+  color: rgba(129, 199, 255, 1); /* Sky blue for active tab text */
+  border-color: rgba(68, 138, 255, 0.2);
+}
+.neumorphic-button:disabled, .disabled-look {
+  /* Disabled Concave: Visually receded and muted */
+  background-color: #292C33;
+  box-shadow: inset 0 2px 3px rgba(33, 36, 41, 0.5),
+              inset 0 -1px 1px rgba(57, 60, 73, 0.3);
+  color: rgba(255, 255, 255, 0.4);
+  opacity: 0.7;
+  cursor: not-allowed !important;
+  transform: none;
+}
+.disabled-look { /* Ensure this class also benefits if used standalone */
+  filter: grayscale(50%);
+}
+
+/* Archetype Node Button Styling */
+.archetype-node-button {
+  padding-top: 0.75rem; /* 12px */
+  padding-bottom: 0.75rem; /* 12px */
+  font-size: 0.925rem; /* Slightly larger text */
+  font-weight: 600; /* Semi-bold */
+}
+.archetype-node-button svg {
+  width: 1.25rem; /* 20px */
+  height: 1.25rem; /* 20px */
+  margin-right: 0.75rem; /* 12px */
+}
+
+/* Contextual Affinity Highlighting for Node Buttons */
+.compatible-highlight-pulse {
+  animation: compatiblePulseAnimation 1.5s infinite ease-in-out;
+  box-shadow: 0 -1px 2px rgba(57, 60, 73, 0.5), 0 2px 3px rgba(33, 36, 41, 0.6), 0 0 0 2px rgba(0, 191, 255, 0); /* Base + initial transparent ring */
+}
+@keyframes compatiblePulseAnimation {
+  0% { box-shadow: 0 -1px 2px rgba(57, 60, 73, 0.5), 0 2px 3px rgba(33, 36, 41, 0.6), 0 0 0 0px rgba(0, 191, 255, 0.0); }
+  50% { box-shadow: 0 -1px 2px rgba(57, 60, 73, 0.5), 0 2px 3px rgba(33, 36, 41, 0.6), 0 0 6px 2px rgba(0, 191, 255, 0.4); } /* Deep Sky Blueish */
+  100% { box-shadow: 0 -1px 2px rgba(57, 60, 73, 0.5), 0 2px 3px rgba(33, 36, 41, 0.6), 0 0 0 0px rgba(0, 191, 255, 0.0); }
+}
+/* Focus Mode: Filtered Out (Dimmed) for Node Buttons */
+.filtered-out-button {
+  opacity: 0.3;
+  pointer-events: none;
+  transition: opacity 0.3s ease-out;
+}
+
+
+.primary-action-button {
+  background-image: linear-gradient(145deg, #a855f7, #7e22ce);
+  color: rgba(255,255,255,0.95);
+  text-shadow: 0px 1px 2px rgba(0,0,0,0.2);
+  /* Convex shadow logic */
+  box-shadow: 0 -1px 3px rgba(172, 102, 248, 0.3), /* Lighter purple highlight from top */
+              0 2px 4px rgba(66, 25, 110, 0.4);  /* Darker purple shadow at bottom */
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  transition: all 0.15s ease-out;
+}
+.primary-action-button:hover:not(:disabled) {
+  background-image: linear-gradient(145deg, #b975ff, #8f33ea);
+  box-shadow: 0 -2px 5px rgba(172, 102, 248, 0.4),
+              0 3px 6px rgba(66, 25, 110, 0.5);
+  border-color: rgba(168, 85, 247, 0.3);
+}
+ .primary-action-button:active:not(:disabled) {
+  background-image: linear-gradient(145deg, #9d4fe0, #711eb9);
+  /* Concave shadow logic */
+  box-shadow: inset 0 2px 4px rgba(66, 25, 110, 0.5),
+              inset 0 -1px 2px rgba(172, 102, 248, 0.3);
+  transform: translateY(1px);
+}
+ .primary-action-button:disabled {
+  background-image: none;
+  background-color: #585d68;
+  box-shadow: inset 0 2px 3px rgba(33, 36, 41, 0.5),
+              inset 0 -1px 1px rgba(57, 60, 73, 0.3);
+  opacity: 0.5;
+  cursor: not-allowed;
+  text-shadow: none;
+  border-color: rgba(255,255,255,0.1);
+  transform: none;
+}
+
+/* Turquoise Action Button */
+.turquoise-action-button {
+  background-image: linear-gradient(145deg, #2dd4bf, #06b6d4); /* teal-500 to cyan-500 */
+  color: rgba(255,255,255,0.95);
+  text-shadow: 0px 1px 2px rgba(0,0,0,0.2);
+  box-shadow: 0 -1px 3px rgba(30, 180, 170, 0.3), /* Lighter teal/cyan highlight */
+              0 2px 4px rgba(5, 100, 120, 0.4);  /* Darker teal/cyan shadow */
+  border: 1px solid rgba(20, 184, 166, 0.2); /* teal-500 adjusted */
+  transition: all 0.15s ease-out;
+}
+.turquoise-action-button:hover:not(:disabled) {
+  background-image: linear-gradient(145deg, #5eead4, #22d3ee); /* teal-400 to cyan-400 */
+  box-shadow: 0 -2px 5px rgba(30, 180, 170, 0.4),
+              0 3px 6px rgba(5, 100, 120, 0.5);
+  border-color: rgba(20, 184, 166, 0.3);
+}
+.turquoise-action-button:active:not(:disabled) {
+  background-image: linear-gradient(145deg, #14b8a6, #0891b2); /* teal-600 to cyan-600 */
+  box-shadow: inset 0 2px 4px rgba(5, 100, 120, 0.5),
+              inset 0 -1px 2px rgba(30, 180, 170, 0.3);
+  transform: translateY(1px);
+}
+.turquoise-action-button:disabled {
+  background-image: none;
+  background-color: #4B5563; /* Adjusted disabled color from primary */
+  box-shadow: inset 0 2px 3px rgba(33, 36, 41, 0.5),
+              inset 0 -1px 1px rgba(57, 60, 73, 0.3);
+  opacity: 0.5;
+  cursor: not-allowed;
+  text-shadow: none;
+  border-color: rgba(255,255,255,0.1);
+  transform: none;
+}
+
+.text-on-glass { /* Text on node backgrounds, etc. */
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Port Light Beam Effect */
+.port-content-wrapper {
+  position: relative; /* For pseudo-element positioning */
+  flex-grow: 1; /* Allow it to take space */
+  height: 100%;
+  display: flex;
+  align-items: center;
+  overflow: hidden; /* Clip the beam if it extends too far due to large offsets */
+}
+
+.port-light-beam::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 65%; /* Width of the light beam */
+  /* Use a variable for the color, set in React component */
+  /* background: linear-gradient(to right, var(--port-light-beam-color, transparent) 10%, transparent 90%); */
+  opacity: 0.20; /* Adjust for subtlety */
+  pointer-events: none;
+  z-index: 0; /* Behind the port text and other direct content */
+  border-radius: inherit; /* If port rows have rounded corners */
+}
+
+.port-light-beam.input-beam::before {
+  left: -15px; /* Offset to start near the port marker area, adjust as needed */
+   background: linear-gradient(to right, var(--port-light-beam-color, transparent) 5%, transparent 80%);
+}
+
+.port-light-beam.output-beam::before {
+  right: -15px; /* Offset to start near the port marker area, adjust as needed */
+  background: linear-gradient(to left, var(--port-light-beam-color, transparent) 5%, transparent 80%);
+}
+
+/* Agent Panel Processing Animation */
+@keyframes agentPanelPulseAnimation {
+  0% { box-shadow: 0 -4px 12px rgba(0,0,0,0.1), 0 0 0 0px rgba(168, 85, 247, 0.0); }
+  50% { box-shadow: 0 -4px 12px rgba(0,0,0,0.1), 0 0 8px 2px rgba(168, 85, 247, 0.2); }
+  100% { box-shadow: 0 -4px 12px rgba(0,0,0,0.1), 0 0 0 0px rgba(168, 85, 247, 0.0); }
+}
+.agent-panel-processing {
+  animation: agentPanelPulseAnimation 1.5s infinite ease-in-out;
+}
+
+/* Node Execution Pulse Animation */
+@keyframes nodeExecutionPulseAnimation {
+  from {
+    /* Use a distinct color for execution pulse, e.g., a bright cyan or white */
+    outline: 2px solid rgba(0, 220, 255, 0.7);
+    outline-offset: 2px;
+     box-shadow: 0px 8px 20px rgba(0, 220, 255, 0.25), /* Original shadow + pulse color */
+                 0 0 0 2px rgba(0, 220, 255, 0.3);
+  }
+  to {
+    outline: 2px solid rgba(0, 220, 255, 0);
+    outline-offset: 2px;
+    /* Revert to original shadow - this might need to be the node's specific shadow */
+    /* For simplicity, assuming a general node shadow here. NodeComponent will handle its specific selected/error shadows. */
+     box-shadow: 0px 8px 20px rgba(68, 138, 255, 0.12);
+  }
+}
+.node-executing-pulse-effect > div { /* Target the inner div with existing styles */
+  animation: nodeExecutionPulseAnimation 0.5s ease-out;
+}
+
+/* Node Contextual Affinity Pulse (used by NodeComponent.tsx) */
+@keyframes nodeContextualAffinityPulseAnimation {
+  0% { outline: 2px solid rgba(0, 191, 255, 0); outline-offset: 2px; }
+  50% { outline: 2px solid rgba(0, 191, 255, 0.5); outline-offset: 3px; } /* Deep Sky Blueish */
+  100% { outline: 2px solid rgba(0, 191, 255, 0); outline-offset: 2px; }
+}
+.node-contextual-affinity-pulse > div {
+  animation: nodeContextualAffinityPulseAnimation 1.5s infinite ease-in-out;
+}
+
+
+/* Connection Ambient Pulse Animation */
+@keyframes connectionAmbientPulseAnimation {
+  to {
+    stroke-dashoffset: -16; /* Matches 2 * (dash + gap) for stroke-dasharray: 2 6 */
+  }
+}
+.connection-ambient-pulse {
+  stroke: rgba(200, 200, 220, 0.15); /* Fainter light color for ambient */
+  stroke-width: 1.5px; /* Can be slightly thinner */
+  stroke-dasharray: 2 6; /* Small dash, larger gap for "marching ants" */
+  animation: connectionAmbientPulseAnimation 1.2s linear infinite; /* Slower animation */
+  pointer-events: none;
+  fill: none;
+}
+
+.connection-execution-intensified-gold {
+    stroke: #FFD700 !important; /* Gold color, important to override other styles */
+    /* A more pronounced glow */
+    filter: drop-shadow(0 0 4px #FFEE77) drop-shadow(0 0 8px #FFD700);
+}
+
+/* Sequence Mode & Focus Mode Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px; /* Adjusted for better proportion */
+  height: 20px; /* Adjusted for better proportion */
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #4A5568; /* Mid-grey, matches scrollbar thumb */
+  transition: .4s;
+  border-radius: 20px; /* Fully rounded */
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px; /* Smaller knob */
+  width: 14px;  /* Smaller knob */
+  left: 3px;    /* Adjusted for smaller knob */
+  bottom: 3px;  /* Adjusted for smaller knob */
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+input:checked + .slider {
+  background-color: #2DD4BF; /* Turquoise - Axiom 2 Color Funcional */
+}
+input:focus + .slider {
+  box-shadow: 0 0 1px #2DD4BF; /* Turquoise focus ring */
+}
+input:checked + .slider:before {
+  transform: translateX(20px); /* Adjusted for smaller switch width */
+}
+
+/* Quick Inspect Popover */
+.quick-inspect-popover {
+    background-color: rgba(45, 48, 57, 0.85); /* Slightly more opaque than nodes */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.25);
+    border-radius: 0.5rem; /* Slightly smaller radius than nodes */
+    padding: 0.75rem; /* 12px */
+    color: rgba(255, 255, 255, 0.9);
+    z-index: 200; /* High z-index */
+    width: 280px; /* Max width */
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+.quick-inspect-popover input[type="text"],
+.quick-inspect-popover input[type="number"],
+.quick-inspect-popover textarea,
+.quick-inspect-popover select {
+    background-color: rgba(30, 33, 40, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.85);
+    padding: 0.375rem 0.5rem; /* 6px 8px */
+    font-size: 0.75rem; /* 12px */
+    border-radius: 0.25rem;
+}
+.quick-inspect-popover input[type="text"]:focus,
+.quick-inspect-popover input[type="number"]:focus,
+.quick-inspect-popover textarea:focus,
+.quick-inspect-popover select:focus {
+    border-color: #a855f7; /* Purple accent */
+    ring: 1px;
+    ring-color: #a855f7;
+}
+.quick-inspect-popover button.popover-close-button {
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    padding: 2px;
+}
+ .quick-inspect-popover button.popover-close-button:hover {
+    background: rgba(255,255,255,0.2);
+ }

@@ -30,66 +30,99 @@ export function useResizableNode(options: ResizableNodeOptions) {
 
   const resizeHandleRef = useRef<SVGRectElement | null>(null);
 
+  // Refs for callback and frequently changing values to stabilize useCallback dependencies
+  const onResizeEndRef = useRef(onResizeEnd);
+  const nodeIdRef = useRef(nodeId);
+  const currentDimensionsRef = useRef(currentDimensions);
+  const zoomLevelRefInternal = useRef(zoomLevelRef.current); // Capture initial zoom, or update if needed
+
+  useEffect(() => {
+    onResizeEndRef.current = onResizeEnd;
+  }, [onResizeEnd]);
+
+  useEffect(() => {
+    nodeIdRef.current = nodeId;
+  }, [nodeId]);
+
+  useEffect(() => {
+    currentDimensionsRef.current = currentDimensions;
+  }, [currentDimensions]);
+
+  useEffect(() => {
+    if (zoomLevelRef?.current !== undefined) {
+        zoomLevelRefInternal.current = zoomLevelRef.current;
+    }
+  }, [zoomLevelRef?.current]);
+
+
   // Update local dimensions if the initialDimensions prop changes externally.
   useEffect(() => {
     setCurrentDimensions(initialDimensions);
   }, [initialDimensions]);
 
   const handleMouseDown = useCallback((event: React.MouseEvent<SVGRectElement>) => {
-    event.stopPropagation(); // Stop propagation to prevent node dragging
+    event.stopPropagation();
     event.preventDefault();
 
-    if (!svgRef.current || !panOffsetRef.current || zoomLevelRef.current === undefined) return;
+    if (!svgRef.current || !panOffsetRef.current || zoomLevelRefInternal.current === undefined) return;
     
+    // Use currentDimensionsRef.current here to ensure the latest state is captured at mousedown
     setResizeState({
       isResizing: true,
       startMousePos: { x: event.clientX, y: event.clientY },
-      startDimensions: currentDimensions, // Current world dimensions
+      startDimensions: currentDimensionsRef.current,
     });
-  }, [svgRef, panOffsetRef, zoomLevelRef, currentDimensions]);
+  }, [svgRef, panOffsetRef]); // zoomLevelRefInternal is a ref, currentDimensionsRef is a ref
 
   const handleMouseMove = useCallback((event: MouseEvent) => {
-    if (!resizeState.isResizing || !zoomLevelRef.current) return;
-    event.stopPropagation();
+    // Access resizeState directly, not from deps as it's part of the closure from addEventListener
+    setResizeState(prevResizeState => {
+        if (!prevResizeState.isResizing || zoomLevelRefInternal.current === undefined || zoomLevelRefInternal.current === 0) return prevResizeState;
+        event.stopPropagation();
 
-    const deltaScreenX = event.clientX - resizeState.startMousePos.x;
-    const deltaScreenY = event.clientY - resizeState.startMousePos.y;
+        const deltaScreenX = event.clientX - prevResizeState.startMousePos.x;
+        const deltaScreenY = event.clientY - prevResizeState.startMousePos.y;
 
-    // Convert screen delta to world delta
-    const deltaWorldX = deltaScreenX / zoomLevelRef.current;
-    const deltaWorldY = deltaScreenY / zoomLevelRef.current;
+        const deltaWorldX = deltaScreenX / zoomLevelRefInternal.current;
+        const deltaWorldY = deltaScreenY / zoomLevelRefInternal.current;
 
-    let newWidth = resizeState.startDimensions.width + deltaWorldX;
-    let newHeight = resizeState.startDimensions.height + deltaWorldY;
+        let newWidth = prevResizeState.startDimensions.width + deltaWorldX;
+        let newHeight = prevResizeState.startDimensions.height + deltaWorldY;
 
-    newWidth = Math.max(MIN_RESIZABLE_NODE_WIDTH, newWidth);
-    newHeight = Math.max(MIN_RESIZABLE_NODE_HEIGHT, newHeight);
-    
-    setCurrentDimensions({ width: newWidth, height: newHeight });
-    // Note: onResizeEnd is called on mouse up to avoid too many state updates in App.tsx
-  }, [resizeState, zoomLevelRef]);
+        newWidth = Math.max(MIN_RESIZABLE_NODE_WIDTH, newWidth);
+        newHeight = Math.max(MIN_RESIZABLE_NODE_HEIGHT, newHeight);
+
+        setCurrentDimensions({ width: newWidth, height: newHeight });
+        return prevResizeState; // mousemove doesn't change resizeState itself, only currentDimensions
+    });
+  }, []); // No dependencies needed as it uses refs or state setters
 
   const handleMouseUp = useCallback((event: MouseEvent) => {
-    if (!resizeState.isResizing) return;
-    event.stopPropagation();
-    
-    onResizeEnd(nodeId, currentDimensions);
-    setResizeState(prev => ({ ...prev, isResizing: false }));
-  }, [resizeState.isResizing, onResizeEnd, nodeId, currentDimensions]);
+    setResizeState(prevResizeState => {
+        if (!prevResizeState.isResizing) return prevResizeState;
+        event.stopPropagation();
+
+        // Use refs for values that might have changed
+        onResizeEndRef.current(nodeIdRef.current, currentDimensionsRef.current);
+        return { ...prevResizeState, isResizing: false };
+    });
+  }, []); // No dependencies needed as it uses refs
 
   useEffect(() => {
+    // Only add/remove listeners if resizeState.isResizing changes
     if (resizeState.isResizing) {
+      // handleMouseMove and handleMouseUp are now stable
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
     }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [resizeState.isResizing, handleMouseMove, handleMouseUp]);
+  }, [resizeState.isResizing, handleMouseMove, handleMouseUp]); // handleMouseMove and handleMouseUp are stable
 
   return {
-    currentDimensions,
+    currentDimensions, // Still return currentDimensions for rendering
     handleResizeMouseDown: handleMouseDown,
     resizeHandleRef,
     isHandleVisible: isSelected, // Only show handle if selected (or always if preferred)

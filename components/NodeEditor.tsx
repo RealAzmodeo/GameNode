@@ -1,10 +1,10 @@
 
 import React, { useState, useCallback, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
-import { AnyNode, Connection, ConnectingState, NodeId, InputPort, OutputPort, ExecutionContext, PortTypeEnum, NodeResizeEndHandler, LogicalCategoryEnum, NodeContextMenuState, ScopeStackItem, AtomicNode, NodeConfig, MolecularNode, OperationTypeEnum, Breakpoints, NodeCreationContextMenuState, Port, ExecutionMetaState, TerminalStateReasonEnum, QuickInspectField, QuickInspectData } from '../types';
+import { AnyNode, Connection, ConnectingState, NodeId, InputPort, OutputPort, ExecutionContext, PortTypeEnum, NodeResizeEndHandler, LogicalCategoryEnum, NodeContextMenuState, ScopeStackItem, AtomicNode, NodeConfig, MolecularNode, OperationTypeEnum, Breakpoints, NodeCreationContextMenuState, Port, ExecutionMetaState, TerminalStateReasonEnum, QuickInspectField, QuickInspectData } from '@/types';
 import NodeComponent from './NodeComponent';
-import { NODE_WIDTH, NODE_HEADER_HEIGHT, NODE_PORT_HEIGHT, NODE_PORT_MARKER_SIZE, EXECUTION_CONNECTION_STROKE, DEFAULT_FRAME_WIDTH, DEFAULT_FRAME_HEIGHT, MIN_RESIZABLE_NODE_HEIGHT, MIN_RESIZABLE_NODE_WIDTH, MAX_ZOOM, MIN_ZOOM, SELECTION_COLOR_ACCENT, PAUSED_NODE_HIGHLIGHT_COLOR, PORT_CATEGORY_HEX_COLORS } from '../constants';
-import {canConnect as canPortsConnect} from '../services/validationService';
-import { UseQuickInspectReturn } from '../hooks/useQuickInspect'; // Import the hook's return type
+import { NODE_WIDTH, NODE_HEADER_HEIGHT, NODE_PORT_HEIGHT, NODE_PORT_MARKER_SIZE, EXECUTION_CONNECTION_STROKE, DEFAULT_FRAME_WIDTH, DEFAULT_FRAME_HEIGHT, MIN_RESIZABLE_NODE_HEIGHT, MIN_RESIZABLE_NODE_WIDTH, MAX_ZOOM, MIN_ZOOM, SELECTION_COLOR_ACCENT, PAUSED_NODE_HIGHLIGHT_COLOR, PORT_CATEGORY_HEX_COLORS } from '@/constants';
+import {canConnect as canPortsConnect} from '@/services/validationService';
+import { UseQuickInspectReturn } from '@/hooks/useQuickInspect'; // Import the hook's return type
 
 export interface NodeEditorContextMenuDetails {
   screenX: number;
