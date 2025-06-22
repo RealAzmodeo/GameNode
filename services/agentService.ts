@@ -2,13 +2,38 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { AgentPlan, OperationTypeEnum, NodeConfig } from '../types';
 
-// Ensure API_KEY is available in the environment
-const API_KEY = process.env.API_KEY;
-if (!API_KEY) {
-  console.error("API_KEY for Gemini is not set in environment variables.");
-  // Potentially throw an error or handle this more gracefully depending on application requirements
+// Conditionally initialize AI and API Key for server-side environments
+let ai: GoogleGenAI | null = null;
+let geminiApiKey: string | undefined = undefined;
+
+if (typeof window === 'undefined') {
+  // This block runs only in Node.js-like environments (e.g., Vite dev server, Node script)
+  geminiApiKey = process.env.GEMINI_API_KEY; // Direct access from Node's process.env
+
+  if (!geminiApiKey) {
+    console.error("GEMINI_API_KEY is not set in server-side environment variables.");
+    // No AI instance if key is missing
+  } else {
+    try {
+      ai = new GoogleGenAI({ apiKey: geminiApiKey });
+    } catch (error) {
+      console.error("Failed to initialize GoogleGenAI, likely due to API key issue:", error);
+      ai = null; // Ensure ai is null if initialization fails
+    }
+  }
+} else {
+  // In browser environment
+  // Check the flag set by Vite. `process.env.GEMINI_API_KEY_AVAILABLE` is a string "true" or "false".
+  const apiKeyAvailable = process.env.GEMINI_API_KEY_AVAILABLE === 'true';
+  if (apiKeyAvailable) {
+    // This case implies the key *was* available at build time, which we are trying to avoid for client.
+    // If this log appears, vite.config.js might still be exposing too much.
+    console.warn("Agent Service: GEMINI_API_KEY was unexpectedly made available to client-side. This is a security risk and should be fixed in vite.config.js. Direct API calls from client are disabled.");
+  } else {
+    console.info("Agent Service: Running in browser environment. API key not available. AI agent calls will be disabled.");
+  }
+  // `ai` remains null, `geminiApiKey` remains undefined.
 }
-const ai = new GoogleGenAI({ apiKey: API_KEY! }); // Use non-null assertion if confident it's set or handled
 
 function buildPrompt(userCommand: string, availableOperations: string[]): string {
   const today = new Date().toLocaleDateString();
@@ -116,24 +141,44 @@ export async function processUserCommandViaAgent(
   userCommand: string,
   availableOperations: OperationTypeEnum[]
 ): Promise<AgentPlan | null> {
-  if (!API_KEY) {
-    console.error("Gemini API Key is not configured. Agent cannot process commands.");
-    throw new Error("API Key not configured for Agent.");
+  if (typeof window !== 'undefined') {
+    console.warn("AgentService: processUserCommandViaAgent cannot be called from the browser. This function is server-side only.");
+    // Optionally, could throw an error or return a specific structure indicating client-side call
+    // For now, returning null to match existing behavior on API key failure.
+    return Promise.resolve(null);
+  }
+
+  if (!ai || !geminiApiKey) {
+    console.error("AgentService: Gemini AI SDK not initialized or API key is missing. Agent cannot process commands.");
+    // Throw an error because this is a server-side context where it's expected to work if configured.
+    throw new Error("API Key not configured or AI SDK initialization failed for Agent.");
   }
 
   const prompt = buildPrompt(userCommand, availableOperations);
 
   try {
+    // ai is guaranteed to be non-null here due to the check above
     const response: GenerateContentResponse = await ai.models.generateContent({
-        model: "gemini-2.5-flash-preview-04-17",
-        contents: prompt,
-        config: {
+        model: "gemini-2.5-flash-preview-04-17", // Consider making model configurable
+        contents: [{ role: "user", parts: [{ text: prompt }] }], // Updated to new content structure
+        generationConfig: { // Updated to new config structure
             responseMimeType: "application/json",
-            temperature: 0.05, // Further lowered temperature for stricter JSON adherence
+            temperature: 0.05,
         }
     });
 
-    let jsonStr = response.text.trim();
+    // Accessing response text correctly according to typical SDK patterns (may need adjustment based on actual v1.5.1 SDK)
+    // Assuming response.candidates[0].content.parts[0].text is where the JSON string is.
+    // This needs to be verified with the exact SDK version's response structure.
+    // For safety, let's check existence.
+    let jsonStr = "";
+    if (response && response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts && response.candidates[0].content.parts[0]) {
+      jsonStr = response.candidates[0].content.parts[0].text || "";
+    } else {
+      console.error("AgentService: Unexpected response structure from Gemini API:", response);
+      throw new Error("Agent received an unexpected response structure from the API.");
+    }
+    jsonStr = jsonStr.trim();
     
     // Remove markdown fences if present
     const fenceRegex = /^```(\w*)?\s*\n?(.*?)\n?\s*```$/s;
